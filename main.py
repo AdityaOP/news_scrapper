@@ -1,7 +1,7 @@
 from search import search_news
 from article_fetcher import fetch_article_text
 from summarizer import summarize
-from storage import save_excel
+from storage import save_doc
 
 def main():
     print("🔍 Searching for digitalhealth news in Australia...")
@@ -20,7 +20,7 @@ def main():
             "Date": item["date"]
         })
 
-    save_excel(data)
+    save_doc(data)
 
 if __name__ == "__main__":
     main()

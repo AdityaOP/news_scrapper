@@ -8,3 +8,4 @@ python-dotenv
 lxml
 lxml_html_clean
 duckduckgo_search
+python-docx

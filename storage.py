@@ -1,15 +1,23 @@
-import pandas as pd
+from docx import Document
 from datetime import datetime
 from config import OUTPUT_FILE
 
-def save_excel(records):
-    df = pd.DataFrame(records)
+def save_doc(records):
+    document = Document()
+    document.add_heading("Digital Health News Summary", level=1)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    # If OUTPUT_FILE = "digital_health_news.xlsx"
-    base_name = OUTPUT_FILE.replace(".xlsx", "")
-    file_name = f"{base_name}_{timestamp}.xlsx"
 
-    df.to_excel(file_name, index=False)
+    
+    file_name = OUTPUT_FILE.replace(".docx", f"_{timestamp}.docx")
+
+    for i, record in enumerate(records, 1):
+        document.add_heading(f"Article {i}", level=2)
+        for key, value in record.items():
+            p = document.add_paragraph()
+            p.add_run(f"{key}: ").bold = True
+            p.add_run(str(value))
+        document.add_paragraph()  # blank line
+
+    document.save(file_name)
     print(f"✅ Saved {len(records)} articles to {file_name}")

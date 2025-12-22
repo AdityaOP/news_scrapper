@@ -25,6 +25,7 @@ htmlcov/
 # 📊 Output files
 *.xlsx
 *.csv
+*.docx
 
 # 🗂 Logs
 *.log
