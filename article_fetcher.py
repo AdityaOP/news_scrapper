@@ -186,9 +186,11 @@ def fetch_article_text(url: str) -> str:
     Returns article text or empty string on complete failure.
     """
     strategies = [
-        ("newspaper3k", fetch_with_newspaper),
-        ("cloudscraper", fetch_with_cloudscraper),
         ("requests", fetch_with_requests),
+        ("cloudscraper", fetch_with_cloudscraper),
+        ("newspaper3k", fetch_with_newspaper),
+        
+        
     ]
     
     for strategy_name, strategy_func in strategies:
