@@ -1,0 +1,45 @@
+# 🐍 Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 📦 Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# 🧪 Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 🧠 IDEs & editors
+.vscode/
+.idea/
+*.swp
+
+# 🔐 Environment variables
+.env
+
+# 📊 Output files
+*.xlsx
+*.csv
+
+# 🗂 Logs
+*.log
+
+# 🗑 OS files
+.DS_Store
+Thumbs.db
+
+# 📦 Build artifacts
+build/
+dist/
+*.egg-info/
+
+# 📝 Jupyter
+.ipynb_checkpoints/
+
+# 🔧 Misc
+.cache/

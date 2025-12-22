@@ -1,0 +1,10 @@
+requests
+beautifulsoup4
+pandas
+openpyxl
+newspaper3k
+groq
+python-dotenv
+lxml
+lxml_html_clean
+duckduckgo_search
