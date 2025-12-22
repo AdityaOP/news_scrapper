@@ -5,7 +5,12 @@ load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-QUERY = "digital health Australia news related to AI"
+QUERY = (
+    "Australia (\"digital health\" OR healthtech OR medtech) "
+    "AND (AI OR \"artificial intelligence\") "
+    "AND (startup OR funding OR grant OR pilot OR launch) "
+    "news"
+)
 MAX_RESULTS = 10
 OUTPUT_FILE = "digital_health_news.docx"
 
