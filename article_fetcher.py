@@ -10,7 +10,7 @@ def fetch_with_newspaper(url: str) -> str:
     try:
         article = Article(url)
         article.config.browser_user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        article.config.request_timeout = 10
+        article.config.request_timeout = 15
         
         article.download()
         article.parse()
