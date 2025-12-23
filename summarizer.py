@@ -16,8 +16,16 @@ def summarize(text: str) -> str:
     if len(text) > max_chars:
         text = text[:max_chars] + "..."
 
-    prompt = f"""Summarize the following article in 3-4 concise sentences.
-Focus on digital health developments relevant to Australia.
+    prompt = f"""You are an expert analyst of digital health and health technology news in Australia.
+Read the article below and identify the key details by answering:
+Who is involved (organisations, startups, government, researchers)?
+What is the digital health innovation, product, policy, or event?
+Where is it happening (highlight relevance to Australia)?
+When is it taking place or announced (if mentioned)?
+Why is it important for healthcare, patients, or the health system?
+How does the solution, technology, or initiative work?   
+Then, using these points, write a clear and concise summary in 3–4 sentences that focuses on the most important digital health developments relevant to Australia.
+Keep the tone professional and informative, and avoid unnecessary details.
 
 Article text:
 {text}
@@ -25,10 +33,10 @@ Article text:
 
     try:
         chat = client.chat.completions.create(
-            model="groq/compound",  # More reliable model
+            model="groq/compound-mini",  # More reliable model
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
-            max_tokens=300,
+            max_tokens=1000,
         )
         
         summary = chat.choices[0].message.content.strip()

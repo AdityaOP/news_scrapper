@@ -10,4 +10,12 @@ lxml_html_clean
 duckduckgo_search
 python-docx
 cloudscraper
-ddgs
+
+# JavaScript rendering tools (install at least ONE of these)
+playwright
+selenium
+webdriver-manager
+requests-html
+
+# Optional: For better performance
+pyppeteer
