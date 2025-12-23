@@ -19,10 +19,13 @@ def fetch_with_playwright(url: str) -> str:
             page = context.new_page()
             
             # Navigate and wait for content
-            page.goto(url, wait_until='networkidle', timeout=20000)
+            page.goto(url, wait_until='networkidle', timeout=10000)
             
-            # Additional wait for dynamic content
-            page.wait_for_timeout(3000)
+            # For MSN specifically, wait longer
+            if 'msn.com' in url.lower():
+                page.wait_for_timeout(5000)  # 5 seconds for MSN
+            else:
+                page.wait_for_timeout(3000)  # 3 seconds for others
             
             # Get the fully rendered HTML
             content = page.content()
@@ -40,9 +43,9 @@ def fetch_with_playwright(url: str) -> str:
                 return text
                 
     except ImportError:
-        pass  # Playwright not installed, skip
+        print(f"   ⚠️ Playwright not installed - install with: pip install playwright && playwright install chromium")
     except Exception as e:
-        pass  # Silent fail
+        print(f"   ⚠️ Playwright error: {str(e)[:100]}")
     
     return ""
 
@@ -228,16 +231,23 @@ def extract_article_text(soup: BeautifulSoup, url: str) -> str:
     
     domain = urlparse(url).netloc.lower()
     
-    # Site-specific selectors (expanded with MSN)
+    # Site-specific selectors (expanded with MSN - MORE SELECTORS)
     selectors_map = {
         'msn.com': [
+            # Try multiple MSN-specific selectors
             'article',
-            '.article-body',
+            'div[class*="article"]',
+            'div[class*="story"]',
+            'div[class*="content"]',
             'main article',
+            'main div[class*="article"]',
             '[data-t="article-body"]',
+            '.article-body',
             '.articlebody',
             'main .content',
             'div[role="main"]',
+            'div[id*="article"]',
+            'div[id*="content"]',
         ],
         'abc.net.au': [
             'article div[data-component="ArticleBody"]',
@@ -331,12 +341,15 @@ def fetch_article_text(url: str) -> str:
     Returns article text or empty string on complete failure.
     """
     
+    print(f"   🔗 URL: {url[:80]}...")
+    
     # Check if this is a known JavaScript-heavy site
     js_heavy_domains = ['msn.com', 'medium.com', 'forbes.com', 'bloomberg.com']
     domain = urlparse(url).netloc.lower()
     is_js_heavy = any(d in domain for d in js_heavy_domains)
     
     if is_js_heavy:
+        print(f"   ⚡ Detected JS-heavy site ({domain}) - using browser automation first")
         # Try JavaScript rendering first for known dynamic sites
         strategies = [
             ("playwright", fetch_with_playwright),
@@ -359,15 +372,17 @@ def fetch_article_text(url: str) -> str:
     
     for strategy_name, strategy_func in strategies:
         try:
+            print(f"   🔄 Trying {strategy_name}...")
             text = strategy_func(url)
             if text:
-                print(f"   ✓ Fetched {len(text)} chars ({strategy_name})")
+                print(f"   ✅ SUCCESS with {strategy_name}: Fetched {len(text)} chars")
                 return text
             else:
+                print(f"   ⚠️ {strategy_name}: No content extracted")
                 time.sleep(0.5)  # Brief delay between strategies
         except Exception as e:
-            print(f"   ⚠️ {strategy_name} error: {str(e)[:50]}")
+            print(f"   ❌ {strategy_name} error: {str(e)[:80]}")
             time.sleep(0.5)
     
-    print(f"   ✗ All strategies failed")
+    print(f"   ❌ All {len(strategies)} strategies failed for this URL")
     return ""
