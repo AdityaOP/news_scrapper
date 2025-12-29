@@ -10,47 +10,67 @@ AUSTRALIAN_DOMAINS = [
     'news.com.au', '9news.com.au', '7news.com.au', 'theaustralian.com.au',
     'crikey.com.au', 'theconversation.com', 'healthtimes.com.au',
     'ausdoc.com.au', 'medicalrepublic.com.au', 'healthcareit.com.au',
-    'digitalhealth.gov.au', 'pulseitmagazine.com.au', 'governmentnews.com.au',
+    'digitalhealth.gov.au/newsroom', 'pulseitmagazine.com.au', 'governmentnews.com.au',
     'innovationaus.com', 'itnews.com.au', 'zdnet.com', 'delimiter.com.au'
 ]
 
 AUSTRALIAN_KEYWORDS = [
-    'australia', 'australian', 'sydney', 'melbourne', 'brisbane', 
-    'perth', 'adelaide', 'canberra', 'hobart', 'darwin',
-    'nsw', 'vic', 'qld', 'wa', 'sa', 'act', 'nt', 'tas',
-    'new south wales', 'victoria', 'queensland', 'western australia',
-    'south australia', 'northern territory', 'tasmania',
-    'commonwealth', 'federal', 'state government'
+    'australia', 'australian'
 ]
 
+# High-value keywords for digital health + AI
+
+def calculate_relevance_score(item: dict) -> float:
+    """
+    Calculate relevance score for an article based on keywords.
+    Higher score = more relevant to digital health + AI in Australia.
+    """
+    title = item.get("title", "").lower()
+    source = item.get("source", "").lower()
+    url = item.get("link", "").lower()
+    
+    score = 0.0
+    
+    # 1. Source quality bonus (trusted Australian health/tech sources)
+    trusted_sources = [
+        'abc.net.au', 'smh.com.au', 'afr.com', 'theage.com.au',
+        'healthcareit.com.au', 'ausdoc.com.au', 'medicalrepublic.com.au',
+        'innovationaus.com', 'digitalhealth.gov.au/newsroom', 'pulseitmagazine.com.au'
+    ]
+    
+    domain = urlparse(url).netloc.lower()
+    if any(trusted in domain for trusted in trusted_sources):
+        score += 5.0
+    elif any(aus_domain in domain for aus_domain in AUSTRALIAN_DOMAINS):
+        score += 2.0
+    
+    
+    # 3. Australian context (must have this)
+    if any(keyword in title for keyword in AUSTRALIAN_KEYWORDS):
+        score += 2.0
+    
+    return score
+
 def is_australian_news(item: dict) -> bool:
-    """
-    Strictly check if news item is Australian.
-    Returns True only if it's clearly Australian content.
-    """
+    """Check if news item is Australian"""
     url = item.get("link", "").lower()
     title = item.get("title", "").lower()
     source = item.get("source", "").lower()
     
-    # Check 1: Is it from an Australian domain?
     domain = urlparse(url).netloc.lower()
     if any(aus_domain in domain for aus_domain in AUSTRALIAN_DOMAINS):
         return True
     
-    # Check 2: Does the title or source mention Australia explicitly?
     text_to_check = f"{title} {source}"
     if any(keyword in text_to_check for keyword in AUSTRALIAN_KEYWORDS):
         return True
     
-    # If neither check passes, it's not Australian news
     return False
 
 def search_google_news_rss(query: str, max_results: int = 10) -> list:
     """Search Google News via RSS feed with AU region"""
     try:
-        # Force Australian region in the query
         au_query = f"{query} Australia"
-        
         base_url = "https://news.google.com/rss/search"
         url = f"{base_url}?q={requests.utils.quote(au_query)}&hl=en-AU&gl=AU&ceid=AU:en"
         
@@ -58,7 +78,7 @@ def search_google_news_rss(query: str, max_results: int = 10) -> list:
         feed = feedparser.parse(response.content)
         
         results = []
-        for entry in feed.entries[:max_results * 2]:  # Fetch more to account for filtering
+        for entry in feed.entries[:max_results * 2]:
             item = {
                 "title": entry.get("title", ""),
                 "link": entry.get("link", ""),
@@ -66,11 +86,8 @@ def search_google_news_rss(query: str, max_results: int = 10) -> list:
                 "source": entry.get("source", {}).get("title", "Unknown")
             }
             
-            # Only include if it's Australian news
             if is_australian_news(item):
                 results.append(item)
-                if len(results) >= max_results:
-                    break
         
         return results
     
@@ -78,12 +95,11 @@ def search_google_news_rss(query: str, max_results: int = 10) -> list:
         print(f"      ⚠️ Google News RSS error: {e}")
         return []
 
-def search_duckduckgo_news(query: str, max_results: int = 10, timelimit: str = "w") -> list:
+def search_duckduckgo_news(query: str, max_results: int = 20, timelimit: str = "w") -> list:
     """Search DuckDuckGo news with Australian filter"""
     try:
         from duckduckgo_search import DDGS
         
-        # Force Australian context in query
         au_query = f"{query} Australia"
         
         results = []
@@ -93,7 +109,7 @@ def search_duckduckgo_news(query: str, max_results: int = 10, timelimit: str = "
                 region="au-en",
                 safesearch="moderate",
                 timelimit=timelimit,
-                max_results=max_results * 2,  # Fetch more to account for filtering
+                max_results=max_results * 2,
             ):
                 item = {
                     "title": r.get("title"),
@@ -102,11 +118,8 @@ def search_duckduckgo_news(query: str, max_results: int = 10, timelimit: str = "
                     "source": r.get("source", "Unknown")
                 }
                 
-                # Only include if it's Australian news
                 if is_australian_news(item):
                     results.append(item)
-                    if len(results) >= max_results:
-                        break
         
         return results
     
@@ -141,16 +154,16 @@ def filter_by_date(results: list, days: int = 7) -> list:
 
 def search_news():
     """
-    Search for Australian news using multiple sources and queries.
-    Returns deduplicated results that are strictly Australian.
+    Search for Australian news and return TOP 20 BEST matches based on relevance scoring.
     """
     all_results = []
     seen_urls = set()
     
-    print(f"🔎 Running {len(SEARCH_QUERIES)} search queries for AUSTRALIAN news only...")
+    print(f"🔎 Running {len(SEARCH_QUERIES)} search queries for AUSTRALIAN news...")
+    print(f"🎯 Will select TOP 20 BEST matches based on keyword relevance\n")
     
     for query_num, query in enumerate(SEARCH_QUERIES, 1):
-        print(f"\n   Query {query_num}/{len(SEARCH_QUERIES)}: '{query}'")
+        print(f"   Query {query_num}/{len(SEARCH_QUERIES)}: '{query}'")
         
         # Try Google News RSS first
         print(f"      Trying Google News RSS (AU region)...")
@@ -179,11 +192,33 @@ def search_news():
     if days_filter:
         before_filter = len(all_results)
         all_results = filter_by_date(all_results, days_filter)
-        print(f"\n🗓️ Filtered to last {days_filter} days: {before_filter} → {len(all_results)} articles")
+        print(f"\n Filtered to last {days_filter} days: {before_filter} → {len(all_results)} articles")
     
-    print(f"\n✅ Total unique Australian results: {len(all_results)}")
+    print(f"\n Total unique Australian articles found: {len(all_results)}")
     
-    # Sort by date (most recent first)
-    all_results.sort(key=lambda x: x.get("date", ""), reverse=True)
+    # Calculate relevance scores for all articles
+    print(f" Calculating relevance scores...")
+    for item in all_results:
+        item['relevance_score'] = calculate_relevance_score(item)
     
-    return all_results
+    # Sort by relevance score (highest first)
+    all_results.sort(key=lambda x: x.get('relevance_score', 0), reverse=True)
+    
+    # Take only top 20
+    top_20 = all_results[:20]
+    
+    # Display scoring results
+    print(f"\n{'='*80}")
+    print(f"🏆 TOP 20 BEST MATCHES (by relevance score):")
+    print(f"{'='*80}\n")
+    
+    for i, item in enumerate(top_20, 1):
+        score = item.get('relevance_score', 0)
+        title = item.get('title', 'Untitled')[:70]
+        print(f"  {i}. [{score:.1f} pts] {title}...")
+    
+    print(f"\n{'='*80}")
+    print(f" Returning TOP 10 articles for processing")
+    print(f"{'='*80}\n")
+    
+    return top_20

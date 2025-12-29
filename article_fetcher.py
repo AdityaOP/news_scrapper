@@ -6,26 +6,41 @@ import time
 from urllib.parse import urlparse
 
 def fetch_with_playwright(url: str) -> str:
-    """Strategy 1: Use Playwright for JavaScript-rendered content (BEST for MSN, dynamic sites)"""
+    """Strategy 1: Use Playwright for JavaScript-rendered content (OPTIMIZED for speed)"""
     try:
         from playwright.sync_api import sync_playwright
         
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
+            # Launch with performance optimizations
+            browser = p.chromium.launch(
+                headless=True,
+                args=[
+                    '--disable-blink-features=AutomationControlled',
+                    '--disable-dev-shm-usage',
+                    '--no-sandbox',
+                ]
+            )
+            
             context = browser.new_context(
                 user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                viewport={'width': 1920, 'height': 1080}
+                viewport={'width': 1920, 'height': 1080},
+                ignore_https_errors=True,
             )
+            
             page = context.new_page()
             
-            # Navigate and wait for content
-            page.goto(url, wait_until='networkidle', timeout=10000)
+            # Block unnecessary resources for SPEED
+            page.route("**/*.{png,jpg,jpeg,gif,svg,ico,css,woff,woff2}", lambda route: route.abort())
             
-            # For MSN specifically, wait longer
+            # Navigate with shorter timeout and 'domcontentloaded' instead of 'networkidle'
+            # This is MUCH faster - doesn't wait for all network requests
+            page.goto(url, wait_until='domcontentloaded', timeout=15000)
+            
+            # Shorter wait times
             if 'msn.com' in url.lower():
-                page.wait_for_timeout(5000)  # 5 seconds for MSN
+                page.wait_for_timeout(2000)  # 2 seconds for MSN (was 5)
             else:
-                page.wait_for_timeout(3000)  # 3 seconds for others
+                page.wait_for_timeout(1000)  # 1 second for others (was 3)
             
             # Get the fully rendered HTML
             content = page.content()
@@ -50,44 +65,64 @@ def fetch_with_playwright(url: str) -> str:
     return ""
 
 def fetch_with_selenium(url: str) -> str:
-    """Strategy 2: Use Selenium for JavaScript-rendered content (Alternative to Playwright)"""
+    """Strategy 2: Use Selenium for JavaScript-rendered content (OPTIMIZED for speed)"""
     try:
         from selenium import webdriver
         from selenium.webdriver.chrome.options import Options
         from selenium.webdriver.chrome.service import Service
-        from selenium.webdriver.common.by import By
-        from selenium.webdriver.support.ui import WebDriverWait
-        from selenium.webdriver.support import expected_conditions as EC
         from webdriver_manager.chrome import ChromeDriverManager
         
-        # Configure Chrome options
+        # Configure Chrome options for MAXIMUM SPEED
         chrome_options = Options()
-        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--headless=new')  # Newer, faster headless mode
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--disable-software-rasterizer')
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-logging')
+        chrome_options.add_argument('--disable-web-security')
+        chrome_options.add_argument('--disable-features=IsolateOrigins,site-per-process')
+        chrome_options.add_argument('--blink-settings=imagesEnabled=false')  # Don't load images - HUGE speedup
+        chrome_options.add_argument('--disable-javascript-harmony-shipping')
         chrome_options.add_argument('--window-size=1920,1080')
-        chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+        chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
         
-        # Initialize driver with webdriver-manager (auto-downloads chromedriver)
+        # Speed optimizations
+        chrome_options.page_load_strategy = 'eager'  # Don't wait for all resources, just DOM
+        
+        # Disable unnecessary features
+        prefs = {
+            'profile.default_content_setting_values': {
+                'images': 2,  # Don't load images
+                'plugins': 2,
+                'popups': 2,
+                'geolocation': 2,
+                'notifications': 2,
+                'media_stream': 2,
+            },
+            'profile.managed_default_content_settings': {'images': 2}
+        }
+        chrome_options.add_experimental_option('prefs', prefs)
+        
+        # Initialize driver
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=chrome_options)
+        
+        # Set timeouts (much faster)
+        driver.set_page_load_timeout(10)  # Max 10 seconds for page load
+        driver.set_script_timeout(5)       # Max 5 seconds for scripts
         
         try:
             driver.get(url)
             
-            # Wait for article content to load (adjust selector as needed)
-            wait = WebDriverWait(driver, 10)
-            # Try to wait for common article elements
-            try:
-                wait.until(EC.presence_of_element_located((By.TAG_NAME, "article")))
-            except:
-                pass  # Continue even if specific element not found
+            # Minimal wait - just 1 second for MSN, 0.5 for others
+            if 'msn.com' in url.lower():
+                time.sleep(1.5)
+            else:
+                time.sleep(0.5)
             
-            # Additional wait for dynamic content
-            time.sleep(3)
-            
-            # Get page source after JavaScript execution
+            # Get page source immediately
             content = driver.page_source
             
             soup = BeautifulSoup(content, 'lxml')
@@ -105,9 +140,9 @@ def fetch_with_selenium(url: str) -> str:
             driver.quit()
             
     except ImportError:
-        pass  # Selenium not installed, skip
+        print(f"   ⚠️ Selenium not installed - install with: pip install selenium webdriver-manager")
     except Exception as e:
-        pass  # Silent fail
+        print(f"   ⚠️ Selenium error: {str(e)[:100]}")
     
     return ""
 
@@ -362,8 +397,8 @@ def fetch_article_text(url: str) -> str:
     else:
         # Try faster methods first for static sites
         strategies = [
-            ("requests", fetch_with_requests),
             ("cloudscraper", fetch_with_cloudscraper),
+            ("requests", fetch_with_requests),
             ("newspaper3k", fetch_with_newspaper),
             ("playwright", fetch_with_playwright),
             ("selenium", fetch_with_selenium),

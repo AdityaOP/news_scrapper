@@ -21,7 +21,7 @@ def summarize(text: str) -> str:
 Your task:
 1. Read the article carefully
 2. Think about what top question this article is answering
-4. Write question in full, followed by a comprehensive 5-6 sentence answer
+4. Write question in full, followed by a comprehensive 5-6 sentence answer in dot points
 
 Format your response EXACTLY like this:
 
@@ -31,7 +31,7 @@ Answer: [Provide a detailed 5-6 sentence answer that fully addresses this questi
 IMPORTANT RULES:
 - Question must be a complete.
 - Question should be tailored to what THIS article actually discusses
-- Answers must be detailed and include specific information from the article
+- Answers must be detailed and include specific information from the article with the dot points.
 - Focus on the most newsworthy and important aspects
 - If the article doesn't provide information for a typical question (e.g., "When"), skip it and choose a different question that the article DOES answer
 - Do not add any extra text, summaries, or commentary beyond the one Q&A pairs
@@ -42,7 +42,7 @@ Article text:
 
     try:
         chat = client.chat.completions.create(
-            model="groq/compound",
+            model="groq/compound-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=1000,

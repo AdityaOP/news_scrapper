@@ -22,7 +22,7 @@ SEARCH_QUERIES = [
     "Australia health AI regulation",
 ]
 
-MAX_RESULTS_PER_QUERY = 10
+MAX_RESULTS_PER_QUERY = 15
 
 OUTPUT_FILE = "digital_health_news.docx"
 
