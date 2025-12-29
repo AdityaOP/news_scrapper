@@ -10,12 +10,19 @@ AUSTRALIAN_DOMAINS = [
     'news.com.au', '9news.com.au', '7news.com.au', 'theaustralian.com.au',
     'crikey.com.au', 'theconversation.com', 'healthtimes.com.au',
     'ausdoc.com.au', 'medicalrepublic.com.au', 'healthcareit.com.au',
-    'digitalhealth.gov.au/newsroom', 'pulseitmagazine.com.au', 'governmentnews.com.au',
+    'digitalhealth.gov.au', 'pulseitmagazine.com.au', 'governmentnews.com.au',
     'innovationaus.com', 'itnews.com.au', 'zdnet.com', 'delimiter.com.au'
 ]
 
 AUSTRALIAN_KEYWORDS = [
-    'australia', 'australian'
+    'australia digital health', 'australian health', 'healthcare australia',
+    'digital health australia','healthtech australia', 'medtech australia', 'ai health australia',
+    'health innovation australia', 'medical technology australia',
+    'health policy australia', 'australia medtech', 
+    'australia ai solutions', 'australia health policy', 'australia health regulation',
+    'australia digital health policy', 'australia digital health regulation', 'australia health funding',
+    'australia health startup', 'australia digital health startup',
+    'australia medical ai', 'australia health ai startup'
 ]
 
 # High-value keywords for digital health + AI
@@ -35,7 +42,7 @@ def calculate_relevance_score(item: dict) -> float:
     trusted_sources = [
         'abc.net.au', 'smh.com.au', 'afr.com', 'theage.com.au',
         'healthcareit.com.au', 'ausdoc.com.au', 'medicalrepublic.com.au',
-        'innovationaus.com', 'digitalhealth.gov.au/newsroom', 'pulseitmagazine.com.au'
+        'innovationaus.com', 'digitalhealth.gov.au', 'pulseitmagazine.com.au'
     ]
     
     domain = urlparse(url).netloc.lower()
@@ -74,7 +81,7 @@ def search_google_news_rss(query: str, max_results: int = 10) -> list:
         base_url = "https://news.google.com/rss/search"
         url = f"{base_url}?q={requests.utils.quote(au_query)}&hl=en-AU&gl=AU&ceid=AU:en"
         
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=20)
         feed = feedparser.parse(response.content)
         
         results = []

@@ -42,7 +42,7 @@ Article text:
 
     try:
         chat = client.chat.completions.create(
-            model="groq/compound-mini",
+            model="groq/compound",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=1000,
