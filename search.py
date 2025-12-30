@@ -2,7 +2,9 @@ import requests
 import feedparser
 from datetime import datetime, timedelta
 from config import SEARCH_QUERIES, MAX_RESULTS_PER_QUERY, TIME_FILTER
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
+import xml.etree.ElementTree as ET
+import time
 
 # Australian news domains and keywords
 AUSTRALIAN_DOMAINS = [
@@ -133,6 +135,53 @@ def search_duckduckgo_news(query: str, max_results: int = 20, timelimit: str = "
     except Exception as e:
         print(f"      ⚠️ DuckDuckGo error: {e}")
         return []
+    
+def search_arxiv(query: str, max_results: int = 10) -> list:
+    """
+    Search arXiv for preprints in computer science, stats, and quantitative biology
+    Focus on ML/AI and healthcare applications
+    """
+    try:
+        print(f"      Searching arXiv...")
+        
+        # arXiv API endpoint
+        base_url = "http://export.arxiv.org/api/query"
+        
+        # Construct search query - focus on relevant categories
+        search_terms = f"all:{query} AND (cat:cs.LG OR cat:cs.AI OR cat:stat.ML OR cat:q-bio)"
+        
+        params = {
+            'search_query': search_terms,
+            'start': 0,
+            'max_results': max_results,
+            'sortBy': 'submittedDate',
+            'sortOrder': 'descending'
+        }
+        
+        response = requests.get(base_url, params=params, timeout=15)
+        
+        # Parse Atom feed
+        feed = feedparser.parse(response.content)
+        
+        results = []
+        for entry in feed.entries[:max_results]:
+            # Extract date (format: 2024-01-15T12:34:56Z)
+            published = entry.get('published', '')
+            date_str = published.split('T')[0] if published else ''
+            
+            results.append({
+                "title": entry.get('title', '').replace('\n', ' '),
+                "link": entry.get('link', ''),
+                "date": date_str,
+                "source": "arXiv"
+            })
+        
+        print(f"      → Found {len(results)} arXiv preprints")
+        return results
+        
+    except Exception as e:
+        print(f"      ⚠️ arXiv error: {e}")
+        return []
 
 def filter_by_date(results: list, days: int = 7) -> list:
     """Filter results to only include recent articles"""
@@ -179,9 +228,11 @@ def search_news():
         # Try DuckDuckGo as fallback
         print(f"      Trying DuckDuckGo (AU region)...")
         ddg_results = search_duckduckgo_news(query, MAX_RESULTS_PER_QUERY, TIME_FILTER)
+
+        arxiv_results = search_arxiv(query, max_results=20)
         
         # Combine results
-        combined = google_results + ddg_results
+        combined = google_results + ddg_results + arxiv_results
         
         # Deduplicate by URL
         new_results = 0
