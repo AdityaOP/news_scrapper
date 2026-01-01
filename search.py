@@ -6,15 +6,39 @@ from urllib.parse import urlparse, quote
 import xml.etree.ElementTree as ET
 import time
 
-# Australian news domains and keywords
-AUSTRALIAN_DOMAINS = [
+
+DOMAINS = [
     'abc.net.au', 'smh.com.au', 'theage.com.au', 'afr.com', 
     'news.com.au', '9news.com.au', '7news.com.au', 'theaustralian.com.au',
     'crikey.com.au', 'theconversation.com', 'healthtimes.com.au',
     'ausdoc.com.au', 'medicalrepublic.com.au', 'healthcareit.com.au',
     'digitalhealth.gov.au', 'pulseitmagazine.com.au', 'governmentnews.com.au',
-    'innovationaus.com', 'itnews.com.au', 'zdnet.com', 'delimiter.com.au'
-]
+    'innovationaus.com', 'itnews.com.au', 'zdnet.com', 'delimiter.com.au', 
+    'healthcareitnews.com', 'mobihealthnews.com', 'hitconsultant.net',
+    'healthtechmagazine.net', 'ehrintelligence.com', 'mhealthintelligence.com',
+    'digitalhealthnews.com', 'healthdatamanagement.com', 'statnews.com',
+    'fiercehealthcare.com',
+    
+    
+    'venturebeat.com', 'techcrunch.com', 'theverge.com', 'wired.com',
+    'technologyreview.com', 'arstechnica.com',
+    
+    
+    'medicalxpress.com', 'sciencedaily.com', 'medscape.com', 'cnbctv18.com',
+    
+    
+    'forbes.com', 'bloomberg.com', 'reuters.com', 'ft.com', 'wsj.com',
+    
+    
+    'digitalhealth.net', 'pulsetoday.co.uk', 'hsj.co.uk', 
+    'euractiv.com', 'healtheuropa.com',
+    
+    
+    'techinasia.com', 'digitalhealthnews.com',
+    
+    
+    'theguardian.com', 'bbc.com', 'cnn.com', 'nytimes.com'
+    ]
 
 AUSTRALIAN_KEYWORDS = [
     'australia digital health', 'australian health', 'healthcare australia',
@@ -50,7 +74,7 @@ def calculate_relevance_score(item: dict) -> float:
     domain = urlparse(url).netloc.lower()
     if any(trusted in domain for trusted in trusted_sources):
         score += 5.0
-    elif any(aus_domain in domain for aus_domain in AUSTRALIAN_DOMAINS):
+    elif any(aus_domain in domain for aus_domain in DOMAINS):
         score += 2.0
     
     
@@ -59,15 +83,15 @@ def calculate_relevance_score(item: dict) -> float:
         score += 2.0
     
     return score
-
+"""
 def is_australian_news(item: dict) -> bool:
-    """Check if news item is Australian"""
+    # Check if news item is Australian
     url = item.get("link", "").lower()
     title = item.get("title", "").lower()
     source = item.get("source", "").lower()
     
     domain = urlparse(url).netloc.lower()
-    if any(aus_domain in domain for aus_domain in AUSTRALIAN_DOMAINS):
+    if any(aus_domain in domain for aus_domain in DOMAINS):
         return True
     
     text_to_check = f"{title} {source}"
@@ -75,11 +99,11 @@ def is_australian_news(item: dict) -> bool:
         return True
     
     return False
-
+"""
 def search_google_news_rss(query: str, max_results: int = 10) -> list:
     """Search Google News via RSS feed with AU region"""
     try:
-        au_query = f"{query} Australia"
+        au_query = f"{query}"
         base_url = "https://news.google.com/rss/search"
         url = f"{base_url}?q={requests.utils.quote(au_query)}&hl=en-AU&gl=AU&ceid=AU:en"
         
@@ -95,8 +119,7 @@ def search_google_news_rss(query: str, max_results: int = 10) -> list:
                 "source": entry.get("source", {}).get("title", "Unknown")
             }
             
-            if is_australian_news(item):
-                results.append(item)
+            results.append(item)
         
         return results
     
@@ -109,7 +132,7 @@ def search_duckduckgo_news(query: str, max_results: int = 20, timelimit: str = "
     try:
         from duckduckgo_search import DDGS
         
-        au_query = f"{query} Australia"
+        au_query = f"{query}"
         
         results = []
         with DDGS() as ddgs:
@@ -127,20 +150,16 @@ def search_duckduckgo_news(query: str, max_results: int = 20, timelimit: str = "
                     "source": r.get("source", "Unknown")
                 }
                 
-                if is_australian_news(item):
-                    results.append(item)
+                results.append(item)
         
         return results
     
     except Exception as e:
         print(f"      ⚠️ DuckDuckGo error: {e}")
         return []
-    
+"""   
 def search_arxiv(query: str, max_results: int = 10) -> list:
-    """
-    Search arXiv for preprints in computer science, stats, and quantitative biology
-    Focus on ML/AI and healthcare applications
-    """
+    
     try:
         print(f"      Searching arXiv...")
         
@@ -182,7 +201,7 @@ def search_arxiv(query: str, max_results: int = 10) -> list:
     except Exception as e:
         print(f"      ⚠️ arXiv error: {e}")
         return []
-
+"""
 def filter_by_date(results: list, days: int = 7) -> list:
     """Filter results to only include recent articles"""
     if not days:
@@ -229,10 +248,10 @@ def search_news():
         print(f"      Trying DuckDuckGo (AU region)...")
         ddg_results = search_duckduckgo_news(query, MAX_RESULTS_PER_QUERY, TIME_FILTER)
 
-        arxiv_results = search_arxiv(query, max_results=20)
+        #arxiv_results = search_arxiv(query, max_results=20)
         
         # Combine results
-        combined = google_results + ddg_results + arxiv_results
+        combined = google_results + ddg_results #+ arxiv_results
         
         # Deduplicate by URL
         new_results = 0

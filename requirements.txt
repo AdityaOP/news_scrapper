@@ -19,3 +19,8 @@ requests-html
 
 # Optional: For better performance
 pyppeteer
+undetected-chromedriver
+playwright-stealth
+selenium-wire 
+curl-cffi
+httpx[http2]
