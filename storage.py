@@ -1,108 +1,121 @@
 from docx import Document
-from docx.shared import Pt, RGBColor, Inches
+from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from datetime import datetime
+import pytz
 from config import OUTPUT_FILE
-import re
 
 def save_doc(records):
     """
-    Save articles to a properly formatted Word document.
-    Uses Q&A format with top 5 questions extracted from article analysis.
+    Save articles to a clean, well-formatted Word document.
+    Uses bullet point summaries for easy scanning.
+    All times displayed in AWST (Australian Western Standard Time).
     """
     document = Document()
     
-    # Add title
+    # Get current time in AWST
+    awst = pytz.timezone('Australia/Perth')
+    current_time_awst = datetime.now(awst)
+    
+    # Title
     title = document.add_heading("Digital Health News Summary - Australia", level=1)
     title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
     
-    # Add metadata
+    # Metadata
     meta = document.add_paragraph()
-    meta.add_run(f"Generated: {datetime.now().strftime('%d %B %Y at %I:%M %p')}").italic = True
-    meta.add_run(f"\nTotal Articles: {len(records)}").italic = True
+    meta_run = meta.add_run(
+        f"Generated: {current_time_awst.strftime('%d %B %Y at %I:%M %p AWST')} | "
+        f"Total Articles: {len(records)}"
+    )
+    meta_run.italic = True
     meta.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
     
-    document.add_paragraph()  # Spacing
-    document.add_paragraph("_" * 80)  # Separator line
-    document.add_paragraph()
+    document.add_paragraph()  # Single spacing
     
     # Add each article
     for i, record in enumerate(records, 1):
-        # Article header
-        heading = document.add_heading(f"Article {i}: {record.get('Title', 'Untitled')}", level=2)
+        # Article number and title
+        heading = document.add_heading(f"Article {i}", level=2)
         
-        # Extract Q&A pairs from summary
-        summary = record.get('Summary', '')
-        qa_pairs = extract_qa_pairs(summary)
+        # Title
+        title_para = document.add_paragraph()
+        title_para.add_run("Title: ").bold = True
+        title_para.add_run(record.get('Title', 'Untitled'))
         
-        if qa_pairs:
-            # Add each Q&A pair
-            for q_num, (question, answer) in enumerate(qa_pairs, 1):
-                # Question
-                q_para = document.add_paragraph()
-                q_para.add_run(f"Question {q_num}: {question}").bold = True
-                
-                # Answer
-                a_para = document.add_paragraph()
-                a_para.add_run(f"Answer: {answer}")
-                
-                # Add spacing between Q&A pairs
-                if q_num < len(qa_pairs):
-                    document.add_paragraph()
-        else:
-            # Fallback if parsing fails
-            document.add_paragraph(summary)
+        # Summary
+        summary_para = document.add_paragraph()
+        summary_para.add_run("Summary:").bold = True
         
-        # Add metadata
-        document.add_paragraph()
-        document.add_paragraph("─" * 60)
+        # Add the bullet points (they should already be formatted from the AI)
+        summary_text = record.get('Summary', 'Summary not available.')
+        summary_content = document.add_paragraph(summary_text)
         
+        # Source
         source_para = document.add_paragraph()
         source_para.add_run("Source: ").bold = True
         source_para.add_run(record.get('Link', 'N/A'))
         
+        # Date - convert to AWST if possible
         date_para = document.add_paragraph()
         date_para.add_run("Published: ").bold = True
-        date_para.add_run(record.get('Date', 'N/A'))
         
-        # Add separator between articles
-        document.add_paragraph()
-        document.add_paragraph("═" * 80)
-        document.add_paragraph()
+        original_date = record.get('Date', 'N/A')
+        awst_date = convert_to_awst(original_date)
+        date_para.add_run(awst_date)
+        
+        # Separator between articles (only if not the last article)
+        if i < len(records):
+            document.add_paragraph("─" * 80)
     
     # Save with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = current_time_awst.strftime("%Y%m%d_%H%M%S")
     file_name = OUTPUT_FILE.replace(".docx", f"_{timestamp}.docx")
     
     document.save(file_name)
     print(f"\n✅ Saved {len(records)} articles to {file_name}")
-    print(f"📄 Format: Top 5 Questions & Answers (3-4 sentences each)")
+    print(f"📄 Format: Clean bullet point summaries")
+    print(f"🕐 All times shown in AWST (Australian Western Standard Time)")
 
-def extract_qa_pairs(text: str) -> list:
+def convert_to_awst(date_string: str) -> str:
     """
-    Extract question and answer pairs from the structured summary text.
-    Returns list of (question, answer) tuples.
+    Convert date string to AWST timezone.
+    Handles multiple common date formats.
     """
-    if not text:
-        return []
+    if not date_string or date_string == 'N/A':
+        return 'N/A'
     
-    qa_pairs = []
+    awst = pytz.timezone('Australia/Perth')
     
-    # Pattern to match "Question X: ... Answer: ..."
-    # This handles multi-line answers
-    pattern = r'Question \d+:\s*(.+?)\s*Answer:\s*(.+?)(?=Question \d+:|$)'
+    # Common date formats from news feeds
+    date_formats = [
+        "%Y-%m-%dT%H:%M:%S%z",           # ISO format with timezone
+        "%Y-%m-%dT%H:%M:%SZ",             # ISO format UTC
+        "%a, %d %b %Y %H:%M:%S %Z",       # RSS format
+        "%a, %d %b %Y %H:%M:%S %z",       # RSS format with timezone
+        "%Y-%m-%d %H:%M:%S",              # Simple datetime
+        "%Y-%m-%d",                       # Date only
+    ]
     
-    matches = re.findall(pattern, text, re.DOTALL | re.IGNORECASE)
+    for fmt in date_formats:
+        try:
+            # Parse the date
+            if '%z' in fmt or '%Z' in fmt:
+                # Has timezone info
+                dt = datetime.strptime(date_string.strip(), fmt)
+                if dt.tzinfo is None:
+                    # If parsing removed timezone, assume UTC
+                    dt = pytz.UTC.localize(dt)
+            else:
+                # No timezone info, assume UTC
+                dt = datetime.strptime(date_string.strip(), fmt)
+                dt = pytz.UTC.localize(dt)
+            
+            # Convert to AWST
+            dt_awst = dt.astimezone(awst)
+            return dt_awst.strftime('%d %B %Y at %I:%M %p AWST')
+            
+        except ValueError:
+            continue
     
-    for question, answer in matches:
-        # Clean up the text
-        question = ' '.join(question.split()).strip()
-        answer = ' '.join(answer.split()).strip()
-        
-        # Remove any trailing newlines or extra whitespace
-        question = question.rstrip('?') + '?'  # Ensure question ends with ?
-        
-        if question and answer and len(answer) > 20:  # Ensure substantial content
-            qa_pairs.append((question, answer))
-    
-    return qa_pairs
+    # If no format worked, return original with AWST note
+    return f"{date_string} (timezone unknown)"

@@ -10,17 +10,4 @@ lxml_html_clean
 duckduckgo_search
 python-docx
 cloudscraper
-
-# JavaScript rendering tools (install at least ONE of these)
-playwright
-selenium
-webdriver-manager
-requests-html
-
-# Optional: For better performance
-pyppeteer
-undetected-chromedriver
-playwright-stealth
-selenium-wire 
-curl-cffi
-httpx[http2]
+pytz

@@ -17,12 +17,12 @@ DOMAINS = [
     'healthcareitnews.com', 'mobihealthnews.com', 'hitconsultant.net',
     'healthtechmagazine.net', 'ehrintelligence.com', 'mhealthintelligence.com',
     'digitalhealthnews.com', 'healthdatamanagement.com', 'statnews.com',
-    'fiercehealthcare.com',
+    'fiercehealthcare.com', 
     
     
     'venturebeat.com', 'techcrunch.com', 'theverge.com', 'wired.com',
-    'technologyreview.com', 'arstechnica.com',
-    
+    'technologyreview.com', 'arstechnica.com', 'thetech.com', 'engadget.com',
+    'mashable.com',    
     
     'medicalxpress.com', 'sciencedaily.com', 'medscape.com', 'cnbctv18.com',
     

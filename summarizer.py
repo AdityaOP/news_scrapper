@@ -16,25 +16,26 @@ def summarize(text: str) -> str:
     if len(text) > max_chars:
         text = text[:max_chars] + "..."
 
-    prompt = f"""You are an expert analyst of digital health and health technology news in Australia.
+    prompt = f"""You are an expert analyst of digital health and health technology news.
 
 Your task:
-1. Read the article carefully
-2. Think about what top question this article is answering
-4. Write question in full, followed by a comprehensive 5-6 sentence answer in dot points
+Summarize the key points of this article in 3-4 concise bullet points.
 
 Format your response EXACTLY like this:
 
-Question: [Write the full question here, e.g., "What new digital health initiative has been launched in Victoria?"]
-Answer: [Provide a detailed 5-6 sentence answer that fully addresses this question. Include specific details, names, dates, and context from the article. Make sure the answer is comprehensive and self-contained.]
+- [First key point - one clear sentence]
+- [Second key point - one clear sentence]
+- [Third key point - one clear sentence]
+- [Fourth key point if needed - one clear sentence]
 
 IMPORTANT RULES:
-- Question must be a complete.
-- Question should be tailored to what THIS article actually discusses
-- Answers must be detailed and include specific information from the article with the dot points.
-- Focus on the most newsworthy and important aspects
-- If the article doesn't provide information for a typical question (e.g., "When"), skip it and choose a different question that the article DOES answer
-- Do not add any extra text, summaries, or commentary beyond the one Q&A pairs
+- Use exactly 3-4 bullet points (use • symbol)
+- Each bullet point should be complete sentences of similar context
+- Focus on the most important facts: who, what, where, when, why, how, outcomes
+- Avoid vague language - be specific and factual
+- Include specific details like names, organizations, dates, numbers
+- Be concise but informative
+- Do not add any extra text, headers, or commentary
 
 Article text:
 {text}
