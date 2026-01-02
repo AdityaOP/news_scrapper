@@ -44,3 +44,5 @@ dist/
 
 # 🔧 Misc
 .cache/
+
+keywords.py
