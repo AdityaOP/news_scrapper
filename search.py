@@ -17,12 +17,12 @@ DOMAINS = [
     'healthcareitnews.com', 'mobihealthnews.com', 'hitconsultant.net',
     'healthtechmagazine.net', 'ehrintelligence.com', 'mhealthintelligence.com',
     'digitalhealthnews.com', 'healthdatamanagement.com', 'statnews.com',
-    'fiercehealthcare.com', 
+    'fiercehealthcare.com', 'pulseit.news', '' 
     
     
     'venturebeat.com', 'techcrunch.com', 'theverge.com', 'wired.com',
     'technologyreview.com', 'arstechnica.com', 'thetech.com', 'engadget.com',
-    'mashable.com',    
+    'mashable.com', 'theguardian.com'
     
     'medicalxpress.com', 'sciencedaily.com', 'medscape.com', 'cnbctv18.com',
     
@@ -41,23 +41,30 @@ DOMAINS = [
     ]
 
 AUSTRALIAN_KEYWORDS = [
-    'australia digital health', 'australian health', 'healthcare australia',
-    'digital health australia','healthtech australia', 'medtech australia', 'ai health australia',
-    'health innovation australia', 'medical technology australia',
-    'health policy australia', 'australia medtech', 
-    'australia ai solutions', 'australia health policy', 'australia health regulation',
+    'australia' , 'sydney', 'melbourne', 'brisbane', 'perth', 'adelaide', 'canberra', 'hobart', 'darwin',
+    'australian', 'oceania', 'aussie', 'aussies', 'australia funding',
+    'australia health policy', 'australia health regulation',
     'australia digital health policy', 'australia digital health regulation', 'australia health funding',
     'australia health startup', 'australia digital health startup',
     'australia medical ai', 'australia health ai startup'
 ]
 
 MEDICAL_TECH_KEYWORDS = [
-    'digital diagnostics', 'digital therapeutics', 'telehealth platform',
-    'remote patient monitoring', 'clinical decision support', 'health data analytics',
-    'wearable health technology', 'population health management',
+    'digital health', 'digital diagnostics', 'digital therapeutics', 'telehealth', 'patient outcomes',
+    'remote patient monitoring', 'clinical decision support', 'health data',
+    'wearable health technology', 'wearable technology', 'wearable', 'health management',
     'health information exchange', 'electronic health records',
-    'medical imaging ai', 'health ai algorithms', 'predictive health analytics'
+    'medical imaging ai', 'health ai algorithms', 'predictive health', 'healthcare',
+    'healthtech', 'medtech', 'ai health', 'health policy', 'health regulation',
+    'health innovation', 'medical technology', 'digital health startup', 'digital health funding',
+    'digital health research', 'health policy', 'medtech', 'health innovation',
+    'ai health solutions', 'medical ai', 'health startup', 'health funding'
 ]
+
+HEALTH_DISEASE_KEYWORDS = [
+    'chronic disease', 'mental health', 'cardiovascular disease', 'diabetes',
+    'cancer detection', 'respiratory disease', 'infectious disease',
+    'public health', 'population health', 'epidemiology']
 
 
 # High-value keywords for digital health + AI
@@ -92,8 +99,10 @@ def calculate_relevance_score(item: dict) -> float:
         score += 5.0
 
     if any(keyword in title for keyword in MEDICAL_TECH_KEYWORDS):
-        score += 2.0
+        score += 3.0
 
+    if any(keyword in title for keyword in HEALTH_DISEASE_KEYWORDS):
+        score += 2.0
     
     return score
 """
@@ -118,7 +127,7 @@ def search_google_news_rss(query: str, max_results: int = 10) -> list:
     try:
         au_query = f"{query}"
         base_url = "https://news.google.com/rss/search"
-        url = f"{base_url}?q={requests.utils.quote(au_query)}&hl=en-AU&gl=AU&ceid=AU:en"
+        url = f"{base_url}?q={requests.utils.quote(au_query)}&hl=en-AU"
         
         response = requests.get(url, timeout=20)
         feed = feedparser.parse(response.content)
@@ -247,18 +256,18 @@ def search_news():
     all_results = []
     seen_urls = set()
     
-    print(f"🔎 Running {len(SEARCH_QUERIES)} search queries for AUSTRALIAN news...")
+    print(f"🔎 Running {len(SEARCH_QUERIES)} search queries for news...")
     print(f"🎯 Will select TOP 20 BEST matches based on keyword relevance\n")
     
     for query_num, query in enumerate(SEARCH_QUERIES, 1):
         print(f"   Query {query_num}/{len(SEARCH_QUERIES)}: '{query}'")
         
         # Try Google News RSS first
-        print(f"      Trying Google News RSS (AU region)...")
+        print(f"      Trying Google News RSS ...")
         google_results = search_google_news_rss(query, MAX_RESULTS_PER_QUERY)
         
         # Try DuckDuckGo as fallback
-        print(f"      Trying DuckDuckGo (AU region)...")
+        print(f"      Trying DuckDuckGo...")
         ddg_results = search_duckduckgo_news(query, MAX_RESULTS_PER_QUERY, TIME_FILTER)
 
         #arxiv_results = search_arxiv(query, max_results=20)
@@ -275,7 +284,7 @@ def search_news():
                 all_results.append(item)
                 new_results += 1
         
-        print(f"      → Found {len(combined)} Australian results ({new_results} new)")
+        print(f"      → Found {len(combined)} results ({new_results} new)")
     
     # Filter by date if needed
     days_filter = {"d": 1, "w": 7, "m": 30}.get(TIME_FILTER, None)
@@ -284,7 +293,7 @@ def search_news():
         all_results = filter_by_date(all_results, days_filter)
         print(f"\n Filtered to last {days_filter} days: {before_filter} → {len(all_results)} articles")
     
-    print(f"\n Total unique Australian articles found: {len(all_results)}")
+    print(f"\n Total unique articles found: {len(all_results)}")
     
     # Calculate relevance scores for all articles
     print(f" Calculating relevance scores...")
@@ -308,7 +317,7 @@ def search_news():
         print(f"  {i}. [{score:.1f} pts] {title}...")
     
     print(f"\n{'='*80}")
-    print(f" Returning TOP 10 articles for processing")
+    print(f" Returning TOP 20 articles for processing")
     print(f"{'='*80}\n")
     
     return top_20

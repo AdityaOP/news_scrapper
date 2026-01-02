@@ -19,7 +19,7 @@ def summarize(text: str) -> str:
     prompt = f"""You are an expert analyst of digital health and health technology news.
 
 Your task:
-Summarize the key points of this article in 3-4 concise bullet points.
+Summarize the key points of this article in 3-4 concise bullet points focusing on the health news.
 
 Format your response EXACTLY like this:
 
@@ -27,6 +27,9 @@ Format your response EXACTLY like this:
 - [Second key point - one clear sentence]
 - [Third key point - one clear sentence]
 - [Fourth key point if needed - one clear sentence]
+
+At the end also add a why it is important sentence for health. If the article is not about health, 
+respond with "Summary not available - article not relevant to health."
 
 IMPORTANT RULES:
 - Use exactly 3-4 bullet points (use • symbol)
