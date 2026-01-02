@@ -20,7 +20,8 @@ DOMAINS = [
     'fiercehealthcare.com', 'pulseit.news',
     'venturebeat.com', 'techcrunch.com', 'theverge.com', 'wired.com',
     'technologyreview.com', 'arstechnica.com', 'thetech.com', 'engadget.com',
-    'mashable.com', 'theguardian.com'
+    'mashable.com', 'theguardian.com', 'statnews.com', 'nature.com',
+    'sciencemag.org', 'nih.gov', 'who.int',
     
     'medicalxpress.com', 'sciencedaily.com', 'medscape.com', 'cnbctv18.com', 'hlth.com',
     
@@ -88,7 +89,8 @@ def calculate_relevance_score(item: dict) -> float:
     trusted_sources = [
         'abc.net.au', 'smh.com.au', 'afr.com', 'theage.com.au',
         'healthcareit.com.au', 'ausdoc.com.au', 'medicalrepublic.com.au',
-        'innovationaus.com', 'digitalhealth.gov.au', 'pulseitmagazine.com.au', 'pulseit.news'
+        'innovationaus.com', 'digitalhealth.gov.au', 'pulseitmagazine.com.au', 'pulseit.news', 
+        'digitalhealth.net'
     ]
     
     domain = urlparse(url).netloc.lower()
@@ -103,13 +105,13 @@ def calculate_relevance_score(item: dict) -> float:
         score += 5.0
 
     if any(keyword in title for keyword in MEDICAL_TECH_KEYWORDS):
-        score += 3.0
+        score += 7.0
 
     if any(keyword in title for keyword in HEALTH_DISEASE_KEYWORDS):
-        score += 2.0
+        score += 3.0
     
     if any(keyword in title for keyword in MEDICAL_STARTUP_KEYWORDS):
-        score += 1.0
+        score += 2.0
     
     return score
 """
