@@ -5,9 +5,65 @@ from config import SEARCH_QUERIES, MAX_RESULTS_PER_QUERY, TIME_FILTER
 from urllib.parse import urlparse, quote
 import xml.etree.ElementTree as ET
 import time
+from difflib import SequenceMatcher
 
 # Import keywords, domains, and scoring function from separate file
 from keywords import calculate_relevance_score
+
+
+def normalize_url(url: str) -> str:
+    """Normalize URL for comparison (remove query params, fragments, trailing slashes)"""
+    try:
+        from urllib.parse import urlparse, urlunparse
+        parsed = urlparse(url)
+        # Remove query params and fragments, normalize path
+        normalized = urlunparse((
+            parsed.scheme.lower(),
+            parsed.netloc.lower(),
+            parsed.path.rstrip('/'),
+            '', '', ''
+        ))
+        return normalized
+    except:
+        return url.lower().strip()
+
+
+def are_titles_similar(title1: str, title2: str, threshold: float = 0.85) -> bool:
+    """Check if two titles are similar using sequence matching"""
+    if not title1 or not title2:
+        return False
+    
+    # Normalize titles
+    t1 = title1.lower().strip()
+    t2 = title2.lower().strip()
+    
+    # Calculate similarity ratio
+    ratio = SequenceMatcher(None, t1, t2).ratio()
+    return ratio >= threshold
+
+
+def is_duplicate(new_item: dict, existing_items: list) -> bool:
+    """
+    Check if an article is a duplicate based on:
+    1. Exact URL match (after normalization)
+    2. Very similar title (>85% match)
+    """
+    new_url = normalize_url(new_item.get('link', ''))
+    new_title = new_item.get('title', '')
+    
+    for existing in existing_items:
+        existing_url = normalize_url(existing.get('link', ''))
+        existing_title = existing.get('title', '')
+        
+        # Check URL match
+        if new_url and existing_url and new_url == existing_url:
+            return True
+        
+        # Check title similarity
+        if are_titles_similar(new_title, existing_title):
+            return True
+    
+    return False
 
 
 def search_google_news_rss(query: str, max_results: int = 10) -> list:
@@ -98,13 +154,14 @@ def filter_by_date(results: list, days: int = 7) -> list:
 
 def search_news():
     """
-    Search for Australian news and return TOP 20 BEST matches based on relevance scoring.
+    Search for Australian news and return ALL unique matches sorted by relevance score.
+    Removes duplicates based on URL normalization and title similarity.
     """
     all_results = []
-    seen_urls = set()
+    duplicates_removed = 0
     
     print(f"🔎 Running {len(SEARCH_QUERIES)} search queries for news...")
-    print(f"🎯 Will select TOP 20 BEST matches based on keyword relevance\n")
+    print(f"🎯 Will return ALL unique articles sorted by relevance score\n")
     
     for query_num, query in enumerate(SEARCH_QUERIES, 1):
         print(f"   Query {query_num}/{len(SEARCH_QUERIES)}: '{query}'")
@@ -120,16 +177,16 @@ def search_news():
         # Combine results
         combined = google_results + ddg_results
         
-        # Deduplicate by URL
+        # Deduplicate using enhanced method
         new_results = 0
         for item in combined:
-            url = item.get("link")
-            if url and url not in seen_urls:
-                seen_urls.add(url)
+            if not is_duplicate(item, all_results):
                 all_results.append(item)
                 new_results += 1
+            else:
+                duplicates_removed += 1
         
-        print(f"      → Found {len(combined)} results ({new_results} new)")
+        print(f"      → Found {len(combined)} results ({new_results} new, {len(combined)-new_results} duplicates)")
     
     # Filter by date if needed
     days_filter = {"d": 1, "w": 7, "m": 30}.get(TIME_FILTER, None)
@@ -139,6 +196,7 @@ def search_news():
         print(f"\n✂️ Filtered to last {days_filter} days: {before_filter} → {len(all_results)} articles")
     
     print(f"\n📊 Total unique articles found: {len(all_results)}")
+    print(f"🗑️ Duplicates removed: {duplicates_removed}")
     
     # Calculate relevance scores for all articles using proprietary algorithm
     print(f"🔢 Calculating relevance scores...")
@@ -147,22 +205,28 @@ def search_news():
     
     # Sort by relevance score (highest first)
     all_results.sort(key=lambda x: x.get('relevance_score', 0), reverse=True)
-    
-    # Take only top 20
-    top_20 = all_results[:20]
+
+    all_results.sort(key=lambda x: x.get('relevance_score', 0), reverse=True)
+
+    # Keep only articles with relevance score > 1
+    MIN_RELEVANCE_SCORE = 1
+    all_results = [
+        item for item in all_results
+        if item.get('relevance_score', 0) > MIN_RELEVANCE_SCORE
+    ]
     
     # Display scoring results
     print(f"\n{'='*80}")
-    print(f"🏆 TOP 20 BEST MATCHES (by relevance score):")
+    print(f"🏆 ALL ARTICLES SORTED BY RELEVANCE SCORE:")
     print(f"{'='*80}\n")
     
-    for i, item in enumerate(top_20, 1):
+    for i, item in enumerate(all_results, 1):
         score = item.get('relevance_score', 0)
         title = item.get('title', 'Untitled')[:70]
         print(f"  {i}. [{score:.1f} pts] {title}...")
     
     print(f"\n{'='*80}")
-    print(f"✅ Returning TOP 20 articles for processing")
+    print(f"\n📊 Articles with relevance score > {MIN_RELEVANCE_SCORE}: {len(all_results)}")
     print(f"{'='*80}\n")
     
-    return top_20
+    return all_results
