@@ -17,14 +17,12 @@ DOMAINS = [
     'healthcareitnews.com', 'mobihealthnews.com', 'hitconsultant.net',
     'healthtechmagazine.net', 'ehrintelligence.com', 'mhealthintelligence.com',
     'digitalhealthnews.com', 'healthdatamanagement.com', 'statnews.com',
-    'fiercehealthcare.com', 'pulseit.news', '' 
-    
-    
+    'fiercehealthcare.com', 'pulseit.news',
     'venturebeat.com', 'techcrunch.com', 'theverge.com', 'wired.com',
     'technologyreview.com', 'arstechnica.com', 'thetech.com', 'engadget.com',
     'mashable.com', 'theguardian.com'
     
-    'medicalxpress.com', 'sciencedaily.com', 'medscape.com', 'cnbctv18.com',
+    'medicalxpress.com', 'sciencedaily.com', 'medscape.com', 'cnbctv18.com', 'hlth.com',
     
     
     'forbes.com', 'bloomberg.com', 'reuters.com', 'ft.com', 'wsj.com',
@@ -66,6 +64,12 @@ HEALTH_DISEASE_KEYWORDS = [
     'cancer detection', 'respiratory disease', 'infectious disease',
     'public health', 'population health', 'epidemiology']
 
+MEDICAL_STARTUP_KEYWORDS = [
+    'health startup', 'medical startup', 'digital health startup',
+    'healthtech startup', 'medtech startup', 'health innovation startup', 'medical funding',
+    'digital health funding', 'healthtech funding', 'medtech funding'
+]
+
 
 # High-value keywords for digital health + AI
 
@@ -84,7 +88,7 @@ def calculate_relevance_score(item: dict) -> float:
     trusted_sources = [
         'abc.net.au', 'smh.com.au', 'afr.com', 'theage.com.au',
         'healthcareit.com.au', 'ausdoc.com.au', 'medicalrepublic.com.au',
-        'innovationaus.com', 'digitalhealth.gov.au', 'pulseitmagazine.com.au'
+        'innovationaus.com', 'digitalhealth.gov.au', 'pulseitmagazine.com.au', 'pulseit.news'
     ]
     
     domain = urlparse(url).netloc.lower()
@@ -103,6 +107,9 @@ def calculate_relevance_score(item: dict) -> float:
 
     if any(keyword in title for keyword in HEALTH_DISEASE_KEYWORDS):
         score += 2.0
+    
+    if any(keyword in title for keyword in MEDICAL_STARTUP_KEYWORDS):
+        score += 1.0
     
     return score
 """
