@@ -10,7 +10,7 @@ def main():
     print("🔍 Digital Health News Aggregator")
     print("=" * 60)
     
-    print("\n🔎 Searching for digital health news in Australia...")
+    print("\n🔎 Searching for news...")
     results = search_news()
     
     if not results:

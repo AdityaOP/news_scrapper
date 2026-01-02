@@ -51,6 +51,15 @@ AUSTRALIAN_KEYWORDS = [
     'australia medical ai', 'australia health ai startup'
 ]
 
+MEDICAL_TECH_KEYWORDS = [
+    'digital diagnostics', 'digital therapeutics', 'telehealth platform',
+    'remote patient monitoring', 'clinical decision support', 'health data analytics',
+    'wearable health technology', 'population health management',
+    'health information exchange', 'electronic health records',
+    'medical imaging ai', 'health ai algorithms', 'predictive health analytics'
+]
+
+
 # High-value keywords for digital health + AI
 
 def calculate_relevance_score(item: dict) -> float:
@@ -73,14 +82,18 @@ def calculate_relevance_score(item: dict) -> float:
     
     domain = urlparse(url).netloc.lower()
     if any(trusted in domain for trusted in trusted_sources):
-        score += 5.0
+        score += 10.0
     elif any(aus_domain in domain for aus_domain in DOMAINS):
-        score += 2.0
+        score += 8.0
     
     
     # 3. Australian context (must have this)
     if any(keyword in title for keyword in AUSTRALIAN_KEYWORDS):
+        score += 5.0
+
+    if any(keyword in title for keyword in MEDICAL_TECH_KEYWORDS):
         score += 2.0
+
     
     return score
 """
