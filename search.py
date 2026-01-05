@@ -5,6 +5,7 @@ from config import SEARCH_QUERIES, MAX_RESULTS_PER_QUERY, TIME_FILTER
 from urllib.parse import urlparse, quote
 import xml.etree.ElementTree as ET
 import time
+from ddgs import DDGS
 from difflib import SequenceMatcher
 
 # Import keywords, domains, and scoring function from separate file
@@ -28,7 +29,7 @@ def normalize_url(url: str) -> str:
         return url.lower().strip()
 
 
-def are_titles_similar(title1: str, title2: str, threshold: float = 0.85) -> bool:
+def are_titles_similar(title1: str, title2: str, threshold: float = 0.90) -> bool:
     """Check if two titles are similar using sequence matching"""
     if not title1 or not title2:
         return False
@@ -94,36 +95,32 @@ def search_google_news_rss(query: str, max_results: int = 10) -> list:
         return []
 
 
-def search_duckduckgo_news(query: str, max_results: int = 20, timelimit: str = "w") -> list:
-    """Search DuckDuckGo news with Australian filter"""
-    try:
-        from duckduckgo_search import DDGS
-        
-        au_query = f"{query}"
-        
-        results = []
-        with DDGS() as ddgs:
-            for r in ddgs.news(
-                keywords=au_query,
-                region="au-en",
-                safesearch="moderate",
-                timelimit=timelimit,
-                max_results=max_results * 2,
-            ):
-                item = {
-                    "title": r.get("title"),
-                    "link": r.get("url"),
-                    "date": r.get("date"),
-                    "source": r.get("source", "Unknown")
-                }
-                
-                results.append(item)
-        
-        return results
+def search_duckduckgo_news(query, max_results=20, timelimit="w", retries=2):
     
-    except Exception as e:
-        print(f"      ⚠️ DuckDuckGo error: {e}")
-        return []
+
+    for attempt in range(retries):
+        try:
+            results = []
+            with DDGS(timeout=20) as ddgs:
+                for r in ddgs.news(
+                    query,
+                    region="au-en",
+                    timelimit=timelimit,
+                    max_results=max_results
+                ):
+                    results.append({
+                        "title": r.get("title"),
+                        "link": r.get("url"),
+                        "date": r.get("date"),
+                        "source": "DuckDuckGo"
+                    })
+            return results
+
+        except Exception as e:
+            print(f"      ⚠️ DuckDuckGo timeout (attempt {attempt+1}/{retries})")
+            time.sleep(2)
+
+    return []
 
 
 def filter_by_date(results: list, days: int = 7) -> list:

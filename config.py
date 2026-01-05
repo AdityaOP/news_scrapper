@@ -6,21 +6,23 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 SEARCH_QUERIES = [
-    "Digital health AI",
-    "Digital health technology",
-    "Digital health innovation",
-    "Digital health solutions",
-    "Digital health startup",
-    "Hospital digital health transformation",
-    "Telehealth technology",
-    "Digital health clinical decision support",
-    "Digital health data analytics",
-    "Digital health medtech digital diagnostics",
-    "Digital health policy regulation",
-    "Digital health research clinical trial",
-    "Digital health population health management",
-    "Digital health wearable technology",
-    "Digital health remote patient monitoring",
+    "health AI",
+    "health technology",
+    "health innovation",
+    "health outcomes",
+    "health startup",
+    "health transformation",
+    "Telehealth", "telemedicine",
+    "digital health",
+    "clinical decision support",
+    "health data",
+    "health diagnostics",
+    "health policy", "health regulation"
+    "health management",
+    "wearable technology", "medical devices",
+    "remote patient monitoring",
+    "health funding",
+    "health compliance",
     ]
 
 MAX_RESULTS_PER_QUERY = 15

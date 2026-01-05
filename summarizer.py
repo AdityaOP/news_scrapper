@@ -28,8 +28,7 @@ Format your response EXACTLY like this:
 - [Third key point - one clear sentence]
 - [Fourth key point if needed - one clear sentence]
 
-At the end also add a why it is important sentence for health. If the article is not about health, 
-respond with "Summary not available - article not relevant to health."
+At the end also add a catchy sentence to interest the reader.
 
 IMPORTANT RULES:
 - Use exactly 3-4 bullet points (use • symbol)
@@ -46,7 +45,7 @@ Article text:
 
     try:
         chat = client.chat.completions.create(
-            model="groq/compound",
+            model="groq/compound-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=1000,
